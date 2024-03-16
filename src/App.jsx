@@ -1,23 +1,57 @@
 import "./App.css";
-import Profile from "./components/Profile/Profile";
-import userData from "./components/Profile/userData.json";
-import friends from "./components/FriendList/friends.json";
-import FriendList from "./components/FriendList/FriendList";
-import TransactionHistory from "./components/TransactionHistory/TransactionHistory";
-import transactions from "./components/TransactionHistory/transactions.json";
+
+import { useEffect, useState } from "react";
+import Description from "./components/Description/Description";
+import Options from "./components/Options/Options";
+import Feedback from "./components/Feedback/Feedback";
+import Notification from "./components/Notification/Notification";
+
+const defaultRating = {
+  good: 0,
+  neutral: 0,
+  bad: 0,
+};
 
 function App() {
+  const [rating, setRating] = useState(() => {
+    const stringifiedRating = localStorage.getItem("ratingValues");
+    const parsedRating = JSON.parse(stringifiedRating) ?? defaultRating;
+    return parsedRating;
+  });
+
+  const updateFeedback = (feedbackType) => {
+    setRating({ ...rating, [feedbackType]: rating[feedbackType] + 1 });
+  };
+
+  const totalFeedback = rating.good + rating.neutral + rating.bad;
+
+  const positive = Math.round(
+    ((rating.good + rating.neutral) / totalFeedback) * 100
+  );
+
+  function reset() {
+    setRating(defaultRating);
+  }
+
+  useEffect(() => {
+    localStorage.setItem("ratingValues", JSON.stringify(rating));
+  }, [rating]);
+
   return (
     <>
-      <Profile
-        name={userData.username}
-        tag={userData.tag}
-        location={userData.location}
-        image={userData.avatar}
-        stats={userData.stats}
+      <Description />
+      <Options
+        updateFeedback={updateFeedback}
+        total={totalFeedback}
+        reset={reset}
       />
-      <FriendList friends={friends} />
-      <TransactionHistory items={transactions} />
+      {totalFeedback > 0 ? (
+        <>
+          <Feedback rating={rating} total={totalFeedback} positive={positive} />
+        </>
+      ) : (
+        <Notification />
+      )}
     </>
   );
 }
